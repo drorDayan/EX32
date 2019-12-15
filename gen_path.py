@@ -1,17 +1,24 @@
 from arr2_epec_seg_ex import *
+from collision_detection import *
 import queue
 import random
+from math import pi
 
 
-def generate_milestones(p1, p2, l, polygons, epsilon, n):
+def generate_milestones(p1, p2, l, polygons, epsilon, n, max_x, max_y, min_x, min_y):
 	if not is_position_valid(p1[0], p1[1], p1[2], l, polygons, epsilon):
 		return []
 	if not is_position_valid(p2[0], p2[1], p2[2], l, polygons, epsilon):
 		return []
-	v = [p1, p2]
+	v = []
 	while len(v) < n:
-		x = random.randint(0, 10000)
-		y = random.randint(0, 10000)
+		x = FT(random.randint(min_x, max_x))
+		y = FT(random.randint(min_y, max_y))
+		theta = FT(random.uniform(0, 2 * pi))
+		if is_position_valid(x, y, theta, l, polygons, epsilon):
+			v.append((x, y, theta))
+	# print(v)
+	return v
 
 
 def bfs(v, g, s, t, path):
@@ -38,19 +45,35 @@ def bfs(v, g, s, t, path):
 	return True
 
 
+def get_min_max(length, obstacles, origin, destination):
+	extra = 10
+	max_x = max(max([max([x for x, y in obs]) for obs in obstacles]), int(origin[0]), int(destination[0])) + length + extra
+	max_y = max(max([max([y for x, y in obs]) for obs in obstacles]), int(origin[1]), int(destination[1])) + length + extra
+	min_x = min(min([min([x for x, y in obs]) for obs in obstacles]), int(origin[0]), int(destination[0])) - length - extra
+	min_y = min(min([min([y for x, y in obs]) for obs in obstacles]), int(origin[1]), int(destination[1])) - length - extra
+	return max_x, max_y, min_x, min_y
+
+
 def generate_path(path, length, obstacles, origin, destination):
 	print(path)
 	print(length)
 	print(obstacles)
 	print(origin)
 	print(destination)
-	path.append((FT(Gmpq(200)), FT(Gmpq(500)), FT(Gmpq("0/3")), True))
-	path.append((FT(Gmpq(300)), FT(Gmpq(1000)), FT(Gmpq("2/1")), True))
-	path.append((FT(Gmpq(300)), FT(Gmpq(1000)), FT(Gmpq("1/1")), False))
+	# path.append((FT(Gmpq(200)), FT(Gmpq(500)), FT(Gmpq("0/3")), True))
+	# path.append((FT(Gmpq(300)), FT(Gmpq(1000)), FT(Gmpq("2/1")), True))
+	# path.append((FT(Gmpq(300)), FT(Gmpq(1000)), FT(Gmpq("1/1")), False))
+	max_x, max_y, min_x, min_y = get_min_max(int(str(length)), obstacles, origin, destination)
+	poly_obstacles = [Polygon_2([Point_2(x, y) for x, y in obs]) for obs in obstacles]
+	origin = [FT(Gmpq(x)) for x in origin]
+	destination = [FT(Gmpq(x)) for x in destination]
+	my_eps = FT(0)
+	number_of_points_to_find = 10000
 
-	milestones = generate_milestones(origin, destination, obstacles, length, 0, 100)
+	milestones = generate_milestones(origin, destination, length, poly_obstacles, my_eps, number_of_points_to_find, max_x, max_y, min_x, min_y)
 	if len(milestones) == 0:
 		return
+	print(milestones)
 	g = make_graph(milestones)
 	temp = []
 	success = bfs(milestones, g, 1, 0, temp)
