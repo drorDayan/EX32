@@ -2,6 +2,7 @@ from arr2_epec_seg_ex import *
 import queue
 import random
 
+
 def generate_milestones(p1, p2, l, polygons, epsilon, n):
 	if not is_position_valid(p1[0], p1[1], p1[2], l, polygons, epsilon):
 		return []
@@ -12,6 +13,7 @@ def generate_milestones(p1, p2, l, polygons, epsilon, n):
 		x = random.randint(0, 10000)
 		y = random.randint(0, 10000)
 
+
 def bfs(v, g, s, t, path):
 	q = queue.Queue()
 	parent = [-1 for a in g]
@@ -20,20 +22,21 @@ def bfs(v, g, s, t, path):
 	q.put(s)
 	while not q.empty():
 		s = q.get()
-		if (s == t):
+		if s == t:
 			break
 		for a, e in g[s]:
-			if (parent[a] == -1):
+			if parent[a] == -1:
 				parent[a] = s
 				edge[a] = e
 				q.put(s)
-	if (parent[t] == -1):
+	if parent[t] == -1:
 		return False
 	path.append(v[t] + [True])
 	while parent[t] != -1:
 		path.append(v[parent[t]] + [not edge[t][3]])
 		t = parent[t]
 	return True
+
 
 def generate_path(path, length, obstacles, origin, destination):
 	print(path)
