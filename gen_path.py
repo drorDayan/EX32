@@ -73,7 +73,9 @@ def make_graph(milestones):
 		for neighbor in nn[1:]:  # first point is self and no need for edge from v to itself
 			if neighbor[1] > FT(Gmpq(0)):  # no need for edge from v to itself (just making sure)
 				# TODO make sure this is a valid edge
-				temp.append(neighbor[0])
+				# notice: the check here should be for 2 different edges (the clockwise and counter-clockwise)
+				clockwise = True
+				temp.append((neighbor[0], clockwise))
 		g.append((milestone, temp))
 	return g
 
