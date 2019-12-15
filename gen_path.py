@@ -16,7 +16,7 @@ def generate_milestones(p1, p2, l, polygons, epsilon, n, max_x, max_y, min_x, mi
 		y = FT(random.randint(min_y, max_y))
 		theta = FT(random.uniform(0, 2 * pi))
 		if is_position_valid(x, y, theta, l, polygons, epsilon):
-			v.append((x, y, theta))
+			v.append(Point_3(x, y, theta))
 	# print(v)
 	return v
 
@@ -54,6 +54,27 @@ def get_min_max(length, obstacles, origin, destination):
 	return max_x, max_y, min_x, min_y
 
 
+def k_nn(tree, k, query, eps):
+	search_nearest = True
+	sort_neighbors = True
+	search = K_neighbor_search(tree, query, k, eps, search_nearest, Euclidean_distance(), sort_neighbors)
+	lst = []
+	search.k_neighbors(lst)
+	return lst
+
+
+def make_graph(milestones, tree):
+	e = []
+	number_of_neighbors = 3
+	for milestone in milestones:
+		nn = k_nn(tree, number_of_neighbors + 1, milestone, FT(Gmpq(0.0)))  # the + 1 to number_of_neighbors is to count for count v as it's neighbor
+		for neighbor in nn[1:]:  # first point is self and no need for edge from v to itself
+			if neighbor[1] > FT(Gmpq(0)):  # no need for edge from v to itself (just making sure)
+				# TODO make sure this is a valid edge
+				e.append((milestone, neighbor[0]))
+	return e
+
+
 def generate_path(path, length, obstacles, origin, destination):
 	print(path)
 	print(length)
@@ -74,7 +95,10 @@ def generate_path(path, length, obstacles, origin, destination):
 	if len(milestones) == 0:
 		return
 	print(milestones)
-	g = make_graph(milestones)
+	tree = Kd_tree(milestones)  # tree is here to be reused for query
+	e = make_graph(milestones, tree)
+	print(e)
+	g = (milestones, e)
 	temp = []
 	success = bfs(milestones, g, 1, 0, temp)
 	if success:
