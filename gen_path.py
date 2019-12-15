@@ -63,16 +63,19 @@ def k_nn(tree, k, query, eps):
 	return lst
 
 
-def make_graph(milestones, tree):
-	e = []
+def make_graph(milestones):
+	g = []
+	tree = Kd_tree(milestones)
 	number_of_neighbors = 3
 	for milestone in milestones:
+		temp = []
 		nn = k_nn(tree, number_of_neighbors + 1, milestone, FT(Gmpq(0.0)))  # the + 1 to number_of_neighbors is to count for count v as it's neighbor
 		for neighbor in nn[1:]:  # first point is self and no need for edge from v to itself
 			if neighbor[1] > FT(Gmpq(0)):  # no need for edge from v to itself (just making sure)
 				# TODO make sure this is a valid edge
-				e.append((milestone, neighbor[0]))
-	return e
+				temp.append(neighbor[0])
+		g.append((milestone, temp))
+	return g
 
 
 def generate_path(path, length, obstacles, origin, destination):
@@ -89,16 +92,18 @@ def generate_path(path, length, obstacles, origin, destination):
 	origin = [FT(Gmpq(x)) for x in origin]
 	destination = [FT(Gmpq(x)) for x in destination]
 	my_eps = FT(0)
-	number_of_points_to_find = 10000
+	number_of_points_to_find = 1000
 
 	milestones = generate_milestones(origin, destination, length, poly_obstacles, my_eps, number_of_points_to_find, max_x, max_y, min_x, min_y)
 	if len(milestones) == 0:
 		return
+	# add origin and destination
+	milestones.append(Point_3(origin[0], origin[1], origin[2]))
+	milestones.append(Point_3(destination[0], destination[1], destination[2]))
+
 	print(milestones)
-	tree = Kd_tree(milestones)  # tree is here to be reused for query
-	e = make_graph(milestones, tree)
-	print(e)
-	g = (milestones, e)
+	g = make_graph(milestones)
+	print(g)
 	temp = []
 	success = bfs(milestones, g, 1, 0, temp)
 	if success:
