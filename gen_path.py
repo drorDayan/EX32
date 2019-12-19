@@ -93,27 +93,36 @@ def is_valid(p1, p2, l, polygons, epsilon, clockwise):
 	return True
 
 
+def get_nn(milestone, l, polygons, epsilon, tree, groups, number_of_neighbors):
+	temp = []
+	nn = k_nn(tree, number_of_neighbors + 1, milestone, FT(Gmpq(0.0)))  # the + 1 to number_of_neighbors is to count for count v as it's neighbor
+	for neighbor in nn[1:]:  # first point is self and no need for edge from v to itself
+		if groups[str(milestone)].count(str(neighbor[0])) == 0:
+			# notice: the check here should be for 2 different edges (the clockwise and counter-clockwise)
+			if is_valid(milestone, neighbor[0], l, polygons, epsilon, True):
+				temp.append((neighbor[0], True))
+				groups[str(milestone)] = groups[str(milestone)] + groups[str(neighbor[0])]
+				groups[str(neighbor[0])] = groups[str(milestone)]
+			elif is_valid(milestone, neighbor[0], l, polygons, epsilon, False):
+				temp.append((neighbor[0], False))
+				groups[str(milestone)] = groups[str(milestone)] + groups[str(neighbor[0])]
+				groups[str(neighbor[0])] = groups[str(milestone)]
+	return temp
+
+
 def make_graph(milestones, l, polygons, epsilon):
 	g = []
 	tree = Kd_tree(milestones)
-	number_of_neighbors = 13
 	groups = {}
 	for milestone in milestones:
 		groups[str(milestone)] = [str(milestone)]
 	for milestone in milestones:
-		temp = []
-		nn = k_nn(tree, number_of_neighbors + 1, milestone, FT(Gmpq(0.0)))  # the + 1 to number_of_neighbors is to count for count v as it's neighbor
-		for neighbor in nn[1:]:  # first point is self and no need for edge from v to itself
-			if groups[str(milestone)].count(str(neighbor[0])) == 0:
-				# notice: the check here should be for 2 different edges (the clockwise and counter-clockwise)
-				if is_valid(milestone, neighbor[0], l, polygons, epsilon, True):
-					temp.append((neighbor[0], True))
-					groups[str(milestone)] = groups[str(milestone)] + groups[str(neighbor[0])]
-					groups[str(neighbor[0])] = groups[str(milestone)]
-				elif is_valid(milestone, neighbor[0], l, polygons, epsilon, False):
-					temp.append((neighbor[0], False))
-					groups[str(milestone)] = groups[str(milestone)] + groups[str(neighbor[0])]
-					groups[str(neighbor[0])] = groups[str(milestone)]
+		for number_of_neighbors in [15, 30, 50]:
+			temp = get_nn(milestone, l, polygons, epsilon, tree, groups, number_of_neighbors)
+			if len(temp) > 0:
+				break
+			else:
+				print("found a point with no valid neighbors no in its group for number_of_neighbors = "+str(number_of_neighbors))
 		g.append((milestone, temp))
 	return g
 
@@ -130,25 +139,27 @@ def generate_path(path, length, obstacles, origin, destination):
 	origin = [FT(Gmpq(x)) for x in origin]
 	destination = [FT(Gmpq(x)) for x in destination]
 	my_eps = FT(5)
-	number_of_points_to_find = 10000
+	for number_of_points_to_find in [5000 * i for i in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]]:
+		print("number_of_points_to_find")
+		print(number_of_points_to_find)
+		milestones = generate_milestones(origin, destination, length, poly_obstacles, my_eps, number_of_points_to_find, max_x, max_y, min_x, min_y)
+		if len(milestones) == 0:
+			return
+		# add origin and destination
+		milestones.append(Point_3(origin[0], origin[1], origin[2]))
+		milestones.append(Point_3(destination[0], destination[1], destination[2]))
 
-	milestones = generate_milestones(origin, destination, length, poly_obstacles, my_eps, number_of_points_to_find, max_x, max_y, min_x, min_y)
-	if len(milestones) == 0:
-		return
-	# add origin and destination
-	milestones.append(Point_3(origin[0], origin[1], origin[2]))
-	milestones.append(Point_3(destination[0], destination[1], destination[2]))
+		print(milestones)
+		g = make_graph(milestones, length, poly_obstacles, my_eps)
+		print(g)
 
-	print(milestones)
-	g = make_graph(milestones, length, poly_obstacles, my_eps)
-	print(g)
+		done = time.time()
+		elapsed = done - start
+		print(elapsed)
 
-	done = time.time()
-	elapsed = done - start
-	print(elapsed)
-
-	temp = []
-	success = bfs(milestones, g, len(milestones) - 1, len(milestones) - 2, temp)
-	if success:
-		for t in temp:
-			path.append(t)
+		temp = []
+		success = bfs(milestones, g, len(milestones) - 1, len(milestones) - 2, temp)
+		if success:
+			for t in temp:
+				path.append(t)
+			break  # no need to retry with more points
