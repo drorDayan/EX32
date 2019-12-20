@@ -112,18 +112,17 @@ def bfs(v, graph, s, t, path):
 
 
 def get_min_max(length, obstacles, origin, destination):
-	extra = 10
-	max_x = max(max([max([x for x, y in obs]) for obs in obstacles]), int(origin[0]), int(destination[0])) + extra
-	max_y = max(max([max([y for x, y in obs]) for obs in obstacles]), int(origin[1]), int(destination[1])) + extra
-	min_x = min(min([min([x for x, y in obs]) for obs in obstacles]), int(origin[0]), int(destination[0])) - extra
-	min_y = min(min([min([y for x, y in obs]) for obs in obstacles]), int(origin[1]), int(destination[1])) - extra
+	max_x = max(max([max([x for x, y in obs]) for obs in obstacles]), int(origin[0]), int(destination[0]))
+	max_y = max(max([max([y for x, y in obs]) for obs in obstacles]), int(origin[1]), int(destination[1]))
+	min_x = min(min([min([x for x, y in obs]) for obs in obstacles]), int(origin[0]), int(destination[0]))
+	min_y = min(min([min([y for x, y in obs]) for obs in obstacles]), int(origin[1]), int(destination[1]))
 	return max_x, max_y, min_x, min_y
 
 
 def k_nn(tree, k, query, eps):
 	search_nearest = True
 	sort_neighbors = True
-	search = K_neighbor_search_python(tree, query, k, eps, search_nearest, distance, sort_neighbors)
+	search = K_neighbor_search(tree, query, k, eps, search_nearest, Euclidean_distance(), sort_neighbors)
 	lst = []
 	search.k_neighbors(lst)
 	return lst
@@ -147,7 +146,7 @@ def is_valid(p1, p2, l, polygons, epsilon, clockwise):
 		z_diff = p2z+(FT(2*pi)-p1z)
 	length = math.sqrt(float(str(x_diff * x_diff + y_diff * y_diff + z_diff*l * z_diff*l)))
 	# print(length)
-	num_of_steps = math.ceil(length/float(str(epsilon)))
+	num_of_steps = math.ceil((2*length)/float(str(epsilon)))
 	diff_vec = [x_diff/FT(num_of_steps), y_diff/FT(num_of_steps), z_diff/FT(num_of_steps)]
 	# print(num_of_steps)
 	# this is an optimization
@@ -178,8 +177,7 @@ def make_graph(milestones, l, polygons, epsilon):
 		groups[str(milestone)] = [str(milestone)]
 	for milestone in milestones:
 		temp = []
-		nn = k_nn(tree, number_of_neighbors + 1, milestone,
-				FT(Gmpq(0.0)))  # the + 1 to number_of_neighbors is to count for count v as it's neighbor
+		nn = k_nn(tree, number_of_neighbors + 1, milestone, epsilon)  # the + 1 to number_of_neighbors is to count for count v as it's neighbor
 		for neighbor in nn[1:]:  # first point is self and no need for edge from v to itself
 			if groups[str(milestone)].count(str(neighbor[0])) == 0:
 				# notice: the check here should be for 2 different edges (the clockwise and counter-clockwise)
@@ -208,8 +206,8 @@ def generate_path(path, length, obstacles, origin, destination):
 	poly_obstacles = [Polygon_2([Point_2(x, y) for x, y in obs]) for obs in obstacles]
 	origin = [FT(Gmpq(x)) for x in origin]
 	destination = [FT(Gmpq(x)) for x in destination]
-	my_eps = FT(10)
-	for number_of_points_to_find in [3000 * i for i in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]]:
+	my_eps = FT(1)
+	for number_of_points_to_find in [1000 * i for i in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]]:
 		print("number_of_points_to_find: " + str(number_of_points_to_find))
 
 		milestones = generate_milestones(origin, destination, length, poly_obstacles, my_eps, number_of_points_to_find, max_x, max_y, min_x, min_y)
