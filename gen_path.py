@@ -104,23 +104,14 @@ distance = Distance_python(transformed_distance, min_distance_to_rectangle, max_
 
 
 def generate_milestones(l, polygons, epsilon, n, max_x, max_y, min_x, min_y):
-	angles = 100
-	res = []
-	for angle in range(angles):
-		v = []
-		angle_tries = 0
-		theta = FT(2 * pi / angles * angle)
-		while len(v) < n / angles:
-			angle_tries += 1
-			if angle_tries > 1000000:
-				theta = random.uniform(0, (2 * pi) - (pi / angles)/4)
-			x = FT(random.randint(min_x, max_x))
-			y = FT(random.randint(min_y, max_y))
-			diff = FT(random.uniform(0, (pi / angles)/4))
-			if is_position_valid(x, y, theta + diff, l, polygons, epsilon):
-				v.append(Point_3(x, y, theta + diff))
-		res += v
-	return res
+	v = []
+	while len(v) < n:
+		x = FT(random.randint(min_x, max_x))
+		y = FT(random.randint(min_y, max_y))
+		theta = FT(random.uniform(0, 2 * pi))
+		if is_position_valid(x, y, theta, l, polygons, epsilon):
+			v.append(Point_3(x, y, theta))
+	return v
 
 
 def bfs(v, graph, s, t, path):
