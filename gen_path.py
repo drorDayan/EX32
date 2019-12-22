@@ -187,7 +187,18 @@ def is_valid(p1, p2, l, polygons, epsilon, clockwise):
 		z_diff = FT(-1)*(p1z+(FT(2*pi)-p2z))
 	else:
 		z_diff = p2z+(FT(2*pi)-p1z)
-	return segment_valid(p1,  l, polygons, epsilon, x_diff, y_diff, z_diff)
+	# return segment_valid(p1,  l, polygons, epsilon, x_diff, y_diff, z_diff)
+	length = math.sqrt(FT.to_double((x_diff * x_diff + y_diff * y_diff + z_diff * z_diff)))
+	num_of_steps = math.ceil(length/(FT.to_double(epsilon)))
+	diff_vec = [x_diff/FT(num_of_steps), y_diff/FT(num_of_steps), z_diff/FT(num_of_steps)]
+	curr = [p1x, p1y, p1z]
+	for i in range(num_of_steps):
+		curr[0] += diff_vec[0]
+		curr[1] += diff_vec[1]
+		curr[2] = FT((FT.to_double(curr[2] + diff_vec[2]) + 2*pi) % (2*pi))
+		if not is_position_valid(curr[0], curr[1], curr[2], l, polygons, epsilon):
+			return False
+	return True
 
 
 class DisjointSet:
@@ -239,7 +250,7 @@ def generate_path(path, length, obstacles, origin, destination):
 	poly_obstacles = [Polygon_2([Point_2(x, y) for x, y in obs]) for obs in obstacles]
 	origin = [FT(Gmpq(x)) for x in origin]
 	destination = [FT(Gmpq(x)) for x in destination]
-	my_eps = FT(5)
+	my_eps = FT(1)
 	if not is_position_valid(origin[0], origin[1], origin[2], length, poly_obstacles, my_eps) or not is_position_valid(destination[0], destination[1], destination[2], length, poly_obstacles, my_eps):
 		print("invalid input")
 		return False
