@@ -220,7 +220,7 @@ if __name__ == "__main__":
   gui = GUI()
   ps = Polygons_scene()
   gui.set_program_name("Polygon Scene Motion Planning")
-  gui.set_field(0, "scene0.txt")
+  gui.set_field(0, "scene0_new.txt")
   # gui.set_field(1, "output_scene0.txt")
   gui.set_field(3, "gen_path")
   gui.set_field(4, "path0.txt")
