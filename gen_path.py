@@ -157,10 +157,10 @@ def bfs(v, graph, s, t, path):
 
 
 def get_min_max(obstacles, origin, destination):
-	max_x = max(max([max([x for x, y in obs]) for obs in obstacles]), int(origin[0]), int(destination[0]))
-	max_y = max(max([max([y for x, y in obs]) for obs in obstacles]), int(origin[1]), int(destination[1]))
-	min_x = min(min([min([x for x, y in obs]) for obs in obstacles]), int(origin[0]), int(destination[0]))
-	min_y = min(min([min([y for x, y in obs]) for obs in obstacles]), int(origin[1]), int(destination[1]))
+	max_x = max(max([max([x for x, y in obs]) for obs in obstacles]), float(origin[0]), float(destination[0]))
+	max_y = max(max([max([y for x, y in obs]) for obs in obstacles]), float(origin[1]), float(destination[1]))
+	min_x = min(min([min([x for x, y in obs]) for obs in obstacles]), float(origin[0]), float(destination[0]))
+	min_y = min(min([min([y for x, y in obs]) for obs in obstacles]), float(origin[1]), float(destination[1]))
 	return max_x, max_y, min_x, min_y
 
 
@@ -174,14 +174,15 @@ def k_nn(tree, k, query, eps):
 
 
 def segment_valid(p1, l, polygons, epsilon, x_diff, y_diff, z_diff):
-	length = math.sqrt(FT.to_double(x_diff * x_diff + y_diff * y_diff + z_diff*l * z_diff*l))
-	if FT(length) <= epsilon:
+	if FT(math.sqrt(FT.to_double(x_diff * x_diff + y_diff * y_diff + z_diff*l * z_diff*l))) <= epsilon:
 		return True
-	if not is_position_valid(p1.x()+x_diff/FT(2), p1.y()+y_diff/FT(2), FT(FT.to_double((p1.z() + z_diff/FT(2) + FT(2*pi))) % (2*pi)), l, polygons, epsilon):
+	mid = [p1.x()+x_diff/FT(2), p1.y()+y_diff/FT(2), FT(FT.to_double((p1.z() + z_diff/FT(2) + FT(2*pi))) % (2*pi))]
+	diff = [x_diff/FT(2), y_diff/FT(2), z_diff/FT(2)]
+	if not is_position_valid(mid[0], mid[1], mid[2], l, polygons, epsilon):
 		return False
-	if not segment_valid(p1, l, polygons, epsilon, x_diff/FT(2), y_diff/FT(2), FT(FT.to_double(z_diff/FT(2) + FT(2*pi)) % (2*pi))):
+	if not segment_valid(p1, l, polygons, epsilon, diff[0], diff[1], diff[2]):
 		return False
-	return segment_valid(Point_3(p1.x()+x_diff/FT(2), p1.y()+y_diff/FT(2), FT(FT.to_double((p1.z() + z_diff/FT(2) + FT(2*pi))) % (2*pi))),l, polygons, epsilon, x_diff/FT(2), y_diff/FT(2), FT(FT.to_double(z_diff/FT(2) + FT(2*pi)) % (2*pi)))
+	return segment_valid(Point_3(mid[0], mid[1], mid[2]), l, polygons, epsilon, diff[0], diff[1], diff[2])
 
 
 def is_valid(p1, p2, l, polygons, epsilon, clockwise):
@@ -254,14 +255,11 @@ def generate_path(path, length, obstacles, origin, destination):
 
 	for number_of_points_to_find in [1000 * i for i in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]]:
 		print("number_of_points_to_find: " + str(number_of_points_to_find))
-
 		milestones = generate_milestones(length, poly_obstacles, my_eps, number_of_points_to_find, max_x, max_y, min_x, min_y)
-		if len(milestones) == 0:
-			return
+		print("generated milestones, "+"time= "+str(time.time()-start))
 		# add origin and destination
 		milestones.append(Point_3(origin[0], origin[1], origin[2]))
 		milestones.append(Point_3(destination[0], destination[1], destination[2]))
-		print("generated milestones, "+"time= "+str(time.time()-start))
 
 		g = make_graph(milestones, length, poly_obstacles, my_eps)
 		print("finish making the graph, "+"time= "+str(time.time()-start))
