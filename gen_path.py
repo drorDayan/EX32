@@ -219,9 +219,8 @@ class DisjointSet:
 		self.parent[root1] = root2
 
 
-def make_graph(milestones, l, polygons, epsilon):
+def make_graph(tree, milestones, l, polygons, epsilon):
 	g = []
-	tree = Kd_tree(milestones)
 	groups = {}
 	number_of_neighbors = 15
 	for milestone in milestones:
@@ -245,6 +244,7 @@ def make_graph(milestones, l, polygons, epsilon):
 
 def generate_path(path, length, obstacles, origin, destination):
 	global pole_l
+	my_eps = FT(5)
 	sys.setrecursionlimit(15000)
 	pole_l = length
 	start = time.time()
@@ -252,25 +252,27 @@ def generate_path(path, length, obstacles, origin, destination):
 	poly_obstacles = [Polygon_2([Point_2(x, y) for x, y in obs]) for obs in obstacles]
 	origin = [FT(Gmpq(x)) for x in origin]
 	destination = [FT(Gmpq(x)) for x in destination]
-	my_eps = FT(1)
 	if not is_position_valid(origin[0], origin[1], origin[2], length, poly_obstacles, my_eps) or not is_position_valid(destination[0], destination[1], destination[2], length, poly_obstacles, my_eps):
 		print("invalid input")
 		return False
-
-	for number_of_points_to_find in [1000 * i for i in [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]]:
+	number_of_points_to_find = 200
+	milestones = [Point_3(origin[0], origin[1], origin[2]), Point_3(destination[0], destination[1], destination[2])]
+	tree = Kd_tree(milestones)
+	while True:
 		print("number_of_points_to_find: " + str(number_of_points_to_find))
-		milestones = generate_milestones(length, poly_obstacles, my_eps, number_of_points_to_find, max_x, max_y, min_x, min_y)
+		new_milestones = generate_milestones(length, poly_obstacles, my_eps, number_of_points_to_find, max_x, max_y, min_x, min_y)
+		milestones += new_milestones
 		print("generated milestones, "+"time= "+str(time.time()-start))
-		# add origin and destination
-		milestones.append(Point_3(origin[0], origin[1], origin[2]))
-		milestones.append(Point_3(destination[0], destination[1], destination[2]))
-
-		g = make_graph(milestones, length, poly_obstacles, my_eps)
+		tree.insert(new_milestones)
+		g = make_graph(tree, milestones, length, poly_obstacles, my_eps)
 		print("finish making the graph, "+"time= "+str(time.time()-start))
 
 		temp = []
-		success = bfs(milestones, g, len(milestones) - 1, len(milestones) - 2, temp)
+		success = bfs(milestones, g, 1, 0, temp)
 		if success:
 			for t in temp:
 				path.append(t)
 			break  # no need to retry with more points
+		else:
+			number_of_points_to_find *= 2
+
