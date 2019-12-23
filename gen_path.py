@@ -4,6 +4,7 @@ import queue
 import random
 from math import pi
 import time
+import sys
 
 # dist
 pole_l = 0
@@ -16,7 +17,7 @@ def transformed_distance(p1, p2):
 	x_diff = p2.x() - p1.x()
 	y_diff = p2.y() - p1.y()
 	z_diff = p2.z() - p1.z()  # min(FT(FT.to_double((p2.z() - p1.z()+FT(2*pi))) % 2*pi), FT(FT.to_double((p1.z() - p2.z()+FT(2*pi))) % 2*pi))
-	return FT(math.sqrt(FT.to_double((x_diff * x_diff + y_diff * y_diff + z_diff * (pole_l) * z_diff * (pole_l)))))
+	return FT(math.sqrt(FT.to_double((x_diff * x_diff + y_diff * y_diff + z_diff * pole_l * z_diff * pole_l))))
 
 
 # The following function returns the transformed distance between the query
@@ -106,8 +107,8 @@ distance = Distance_python(transformed_distance, min_distance_to_rectangle, max_
 def generate_milestones(l, polygons, epsilon, n, max_x, max_y, min_x, min_y):
 	v = []
 	while len(v) < n:
-		x = FT(random.randint(min_x, max_x))
-		y = FT(random.randint(min_y, max_y))
+		x = FT(random.uniform(min_x, max_x))
+		y = FT(random.uniform(min_y, max_y))
 		theta = FT(random.uniform(0, 2 * pi))
 		if is_position_valid(x, y, theta, l, polygons, epsilon):
 			v.append(Point_3(x, y, theta))
@@ -165,7 +166,7 @@ def k_nn(tree, k, query, eps):
 
 
 def segment_valid(p1, l, polygons, epsilon, x_diff, y_diff, z_diff):
-	if FT(math.sqrt(FT.to_double(x_diff * x_diff + y_diff * y_diff + z_diff*l * z_diff*l))) <= epsilon:
+	if FT(math.sqrt(FT.to_double(x_diff * x_diff + y_diff * y_diff + z_diff*l * z_diff*l))) < FT(2)*epsilon:
 		return True
 	mid = [p1.x()+x_diff/FT(2), p1.y()+y_diff/FT(2), FT(FT.to_double((p1.z() + z_diff/FT(2) + FT(2*pi))) % (2*pi))]
 	diff = [x_diff/FT(2), y_diff/FT(2), z_diff/FT(2)]
@@ -187,9 +188,9 @@ def is_valid(p1, p2, l, polygons, epsilon, clockwise):
 		z_diff = FT(-1)*(p1z+(FT(2*pi)-p2z))
 	else:
 		z_diff = p2z+(FT(2*pi)-p1z)
-	# return segment_valid(p1,  l, polygons, epsilon, x_diff, y_diff, z_diff)
-	length = math.sqrt(FT.to_double((x_diff * x_diff + y_diff * y_diff + z_diff * z_diff)))
-	num_of_steps = math.ceil(length/(FT.to_double(epsilon)))
+	return segment_valid(p1,  l, polygons, epsilon, x_diff, y_diff, z_diff)
+	length = (math.sqrt(FT.to_double(x_diff * x_diff + y_diff * y_diff + z_diff*l * z_diff*l)))
+	num_of_steps = math.ceil(length/(2*FT.to_double(epsilon)))
 	diff_vec = [x_diff/FT(num_of_steps), y_diff/FT(num_of_steps), z_diff/FT(num_of_steps)]
 	curr = [p1x, p1y, p1z]
 	for i in range(num_of_steps):
@@ -244,6 +245,7 @@ def make_graph(milestones, l, polygons, epsilon):
 
 def generate_path(path, length, obstacles, origin, destination):
 	global pole_l
+	sys.setrecursionlimit(15000)
 	pole_l = length
 	start = time.time()
 	max_x, max_y, min_x, min_y = get_min_max(obstacles, origin, destination)

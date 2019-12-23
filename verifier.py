@@ -135,9 +135,9 @@ class Polygons_scene():
       p = pwh.outer_boundary()
       lst = polygon_2_to_tuples_list(p)
       gui.add_polygon(lst, Qt.lightGray).polygon.setZValue(-3)
-      # for p in pwh.holes():
-      #   lst = polygon_2_to_tuples_list(p)
-      #   gui.add_polygon(lst, Qt.white).polygon.setZValue(-2)
+      for p in pwh.holes():
+        lst = polygon_2_to_tuples_list(p)
+        gui.add_polygon(lst, Qt.white).polygon.setZValue(-2)
 
 
     # check that the origin matches the first point in the path
