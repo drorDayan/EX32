@@ -203,43 +203,51 @@ def is_valid(p1, p2, l, polygons, epsilon, clockwise):
 
 
 class DisjointSet:
-	def __init__(self, vertices, parent):
-		self.vertices = vertices
-		self.parent = parent
+	def __init__(self):
+		self.n = 0
+		self.parent = []
+		self.num = {}
 
-	def find(self, item):
-		if self.parent[item] == item:
-			return item
-		else:
-			return self.find(self.parent[item])
+	def add(self, vertices):
+		for i in range(len(vertices)):
+			self.num[str(vertices[i])] = i + self.n
+			self.parent.append(i + self.n)
+		self.n += len(vertices)
 
-	def union(self, set1, set2):
-		root1 = self.find(set1)
-		root2 = self.find(set2)
+	def find(self, s):
+		if self.parent[s] == s:
+			return s
+		self.parent[s] = self.find(self.parent[s])
+		return self.parent[s]
+
+	def connected(self, s1, s2):
+		s1 = self.num[str(s1)]
+		s2 = self.num[str(s2)]
+		return self.find(s1) == self.find(s2)
+
+	def union(self, s1, s2):
+		s1 = self.num[str(s1)]
+		s2 = self.num[str(s2)]
+		root1 = self.find(s1)
+		root2 = self.find(s2)
 		self.parent[root1] = root2
 
 
-def make_graph(tree, milestones, l, polygons, epsilon):
-	g = []
-	groups = {}
+def make_graph(tree, g, ds, milestones, l, polygons, epsilon):
 	number_of_neighbors = 15
-	for milestone in milestones:
-		groups[str(milestone)] = str(milestone)
-	ds = DisjointSet(milestones, groups)
 	for milestone in milestones:
 		temp = []
 		nn = k_nn(tree, number_of_neighbors + 1, milestone, FT(0))  # the + 1 to number_of_neighbors is to count for count v as it's neighbor
 		for neighbor in nn[1:]:  # first point is self and no need for edge from v to itself
-			if ds.find(str(milestone)) != ds.find(str(neighbor[0])):
+			if not ds.connected(milestone, neighbor[0]):
 				# notice: the check here should be for 2 different edges (the clockwise and counter-clockwise)
 				if is_valid(milestone, neighbor[0], l, polygons, epsilon, True):
 					temp.append((neighbor[0], True))
-					ds.union(str(milestone), str(neighbor[0]))
+					ds.union(milestone, neighbor[0])
 				elif is_valid(milestone, neighbor[0], l, polygons, epsilon, False):
 					temp.append((neighbor[0], False))
-					ds.union(str(milestone), str(neighbor[0]))
+					ds.union(milestone, neighbor[0])
 		g.append((milestone, temp))
-	return g
 
 
 def generate_path(path, length, obstacles, origin, destination):
@@ -258,21 +266,25 @@ def generate_path(path, length, obstacles, origin, destination):
 	number_of_points_to_find = 200
 	milestones = [Point_3(origin[0], origin[1], origin[2]), Point_3(destination[0], destination[1], destination[2])]
 	tree = Kd_tree(milestones)
+	g = []
+	ds = DisjointSet()
+	ds.add(milestones)
 	while True:
 		print("number_of_points_to_find: " + str(number_of_points_to_find))
 		new_milestones = generate_milestones(length, poly_obstacles, my_eps, number_of_points_to_find, max_x, max_y, min_x, min_y)
+		ds.add(new_milestones)
 		milestones += new_milestones
 		print("generated milestones, "+"time= "+str(time.time()-start))
 		tree.insert(new_milestones)
-		g = make_graph(tree, milestones, length, poly_obstacles, my_eps)
+		make_graph(tree, g, ds, milestones, length, poly_obstacles, my_eps)
 		print("finish making the graph, "+"time= "+str(time.time()-start))
 
 		temp = []
-		success = bfs(milestones, g, 1, 0, temp)
+		success = ds.find(0) == ds.find(1)
 		if success:
+			bfs(milestones, g, 1, 0, temp)
 			for t in temp:
 				path.append(t)
 			break  # no need to retry with more points
 		else:
 			number_of_points_to_find *= 2
-
