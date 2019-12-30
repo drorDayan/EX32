@@ -167,7 +167,7 @@ def k_nn(tree, k, query, eps):
 
 
 def segment_valid(p1, l, polygons, epsilon, x_diff, y_diff, z_diff):
-	if FT(math.sqrt(FT.to_double(x_diff * x_diff + y_diff * y_diff + z_diff*l * z_diff*l))) < FT(2)*epsilon:
+	if FT(math.sqrt(FT.to_double(x_diff * x_diff + y_diff * y_diff + z_diff*l * z_diff*l))) < epsilon:
 		return True
 	mid = [p1.x()+x_diff/FT(2), p1.y()+y_diff/FT(2), FT(FT.to_double((p1.z() + z_diff/FT(2) + FT(2*pi))) % (2*pi))]
 	diff = [x_diff/FT(2), y_diff/FT(2), z_diff/FT(2)]
@@ -253,7 +253,7 @@ def make_graph(tree, g, ds, milestones, l, polygons, epsilon):
 
 def generate_path(path, length, obstacles, origin, destination):
 	global pole_l
-	my_eps = FT(5)
+	my_eps = FT(1)
 	sys.setrecursionlimit(15000)
 	pole_l = length
 	start = time.time()
