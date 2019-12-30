@@ -159,6 +159,7 @@ def get_min_max(obstacles, origin, destination):
 def k_nn(tree, k, query, eps):
 	search_nearest = True
 	sort_neighbors = True
+	# search = K_neighbor_search(tree, query, k, eps, search_nearest, Euclidean_distance(), sort_neighbors)
 	search = K_neighbor_search_python(tree, query, k, eps, search_nearest, distance, sort_neighbors)
 	lst = []
 	search.k_neighbors(lst)
